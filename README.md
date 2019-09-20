@@ -18,9 +18,9 @@ Set up GUI
 
 
 # Members
-Chris Calloway
-Varun Chanddra
-Abhay Khosla
-Roxy Farhad
+1. Chris Calloway
+2. Varun Chanddra 
+3. Abhay Khosla
+4. Roxy Farhad
 
 
