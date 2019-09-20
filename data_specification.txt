@@ -1,0 +1,12 @@
+This is the standard data format we use for collecting data from the STM board:
+
+
+
+Current model:
+________________________________________________________________________________
+10 bytes tx |  2 bytes angle | 500 bytes intensity values   | 2 bytes checksum
+________________________________________________________________________________
+
+
+
+Feel free to update the above model as needed. As of 9/18/19 it is not set in stone.
