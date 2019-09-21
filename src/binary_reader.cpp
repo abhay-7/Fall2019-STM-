@@ -2,11 +2,17 @@
 #include <vector>
 #include <stdlib.h> 
 
+
 struct tx_interval 
 {
     double angle;
     std::vector<int> intensities;
 };
+
+tx_interval* create_tx_interval();
+FILE* open_binary_file(char * raw_file_ptr);
+std::vector<tx_interval*>* binary_file_to_sonogram_data(FILE* binary_file);
+
 
 std::vector<int> intensity_values(char* char_intensities)
 {
@@ -27,9 +33,9 @@ FILE* open_binary_file(char * raw_file_ptr){
 }
 
 
-std::vector<std::unique_ptr<tx_interval>> binary_file_to_sonogram_data(FILE* binary_file)
+std::vector<tx_interval*>* binary_file_to_sonogram_data(FILE* binary_file)
 {
-    std::vector<std::unique_ptr<tx_interval>> scans;
+    std::vector<tx_interval*>* scans = new std::vector<tx_interval*>();
     if (binary_file == NULL) perror ("Error opening sonogram binary data file");
 
     else
@@ -45,7 +51,7 @@ std::vector<std::unique_ptr<tx_interval>> binary_file_to_sonogram_data(FILE* bin
             fgets(intensities, 501, binary_file);
             sonogram_data->angle = atof(angle); /* Standard Lib  char* to double */
             sonogram_data->intensities = intensity_values(intensities); /* in house formatting */
-            scans.push_back(sonogram_data);
+            scans->push_back(sonogram_data);
         }
     } 
     fclose (binary_file);
@@ -53,8 +59,8 @@ std::vector<std::unique_ptr<tx_interval>> binary_file_to_sonogram_data(FILE* bin
 }
 
 //Same format at server.cpp for compatibility sake
-std::unique_ptr<tx_interval> create_tx_interval()
+tx_interval* create_tx_interval()
 {
-    std::unique_ptr<tx_interval> sonogram_data(new tx_interval());
+    tx_interval* sonogram_data(new tx_interval());
     return sonogram_data;
 }

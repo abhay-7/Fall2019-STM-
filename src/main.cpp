@@ -6,14 +6,15 @@
 
 #include <iostream> // cout, cerr
 #include <math.h>
-
+#include <stdlib.h> 
 #include <pthread.h>
 #include <vector>
 #include <mutex>
 
-#include "server.cpp"
+#include "binary_reader.cpp"
+//#include "server.cpp"
 #include "safe_queue.h"
-
+#include <stdio.h>
 #include <SDL2/SDL.h>
 
 #define SCREEN_WIDTH 500
@@ -24,7 +25,7 @@
 
 struct dl_args {
     std::vector<unsigned char>* pixels;
-    SafeQueue<tx_interval>* queue;
+    std::vector<tx_interval*> queue;
     std::mutex* m;
 };
 
@@ -120,22 +121,12 @@ static inline void draw_line(SDL_Point p1, SDL_Point p2, tx_interval& tx_itval,
 }
 
 
-void process_events(SDL_bool &running) {
-    SDL_Event event;
-
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) {
-            running = SDL_FALSE;
-        }
-    }
-}
-
 
 // Helper function to draw as many lines as possible
 void* draw_lines(void* dl_args_void) {
     dl_args* draw_lines_args = (struct dl_args*) dl_args_void;
     std::vector<unsigned char>* pixels = draw_lines_args->pixels;
-    SafeQueue<tx_interval>* queue = draw_lines_args->queue;
+    std::vector<tx_interval*> queue = draw_lines_args->queue;
     std::mutex* m = draw_lines_args->m;
 
     double const X_ORIGIN = SCREEN_WIDTH / 2;
@@ -144,28 +135,26 @@ void* draw_lines(void* dl_args_void) {
     start_pt.x = X_ORIGIN;
     start_pt.y = Y_ORIGIN;
 
-    bool got_interval;
     int distance = 150;
     tx_interval temp_tx_interval;
 
-    while (1) {
+    int counter = 0;
+    for (auto &x: queue)
+    {
+        double angle = queue[counter]->angle;
+    
 
-        // Put queue items into data vector
-        got_interval = (*queue).pop_front(temp_tx_interval);
-        if (!got_interval) {
+        if (angle < 3.67 || angle > 5.76) {
             continue;
         }
-
-        if (temp_tx_interval.angle < 3.67 || temp_tx_interval.angle > 5.76) {
-            continue;
-        }
-
         // TODO: distance should be based on length of interval
         SDL_Point end_pt = polar_to_cart(distance, temp_tx_interval.angle);
 
         end_pt = cart_to_screen(end_pt);
 
         draw_line(start_pt, end_pt, temp_tx_interval, *pixels, *m);
+        counter++;
+        std::cout << counter << std::endl;
     }
 
     return NULL;
@@ -189,15 +178,11 @@ void draw_screen(SDL_Renderer* renderer, SDL_Texture* texture,
 
 
 int main(int argc, char** argv) {
-    SafeQueue<tx_interval> queue;
+    //SafeQueue<tx_interval> queue;
+    char* raw_binary_file_ptr = argv[1];
+    FILE* binary_data = open_binary_file(raw_binary_file_ptr);
+    std::vector<tx_interval*>* scans = binary_file_to_sonogram_data(binary_data);
 
-    pthread_t t0;
-    int result = pthread_create(&t0, NULL, start_server, (void*)&queue);
-
-    if (result < 0) {
-        std::cerr << "Could not create server thread!" << std::endl;
-        return 1;
-    }
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << std::endl;
@@ -221,8 +206,6 @@ int main(int argc, char** argv) {
                                              TEX_WIDTH,
                                              TEX_HEIGHT);
 
-    SDL_bool running = SDL_TRUE;
-
     std::mutex m;
     std::vector<unsigned char> pixels(TEX_WIDTH * TEX_HEIGHT * 4, 0);
 
@@ -232,19 +215,13 @@ int main(int argc, char** argv) {
 
     dl_args dl_args_void;
     dl_args_void.pixels = &pixels;
-    dl_args_void.queue = &queue;
+    dl_args_void.queue = (*scans);
     dl_args_void.m = &m;
 
-    pthread_t t3;
-    result = pthread_create(&t3, NULL, draw_lines, (void*)&dl_args_void);
 
-    while (running) {
-
-        // Process incoming events
-        process_events(running);
-
-        draw_screen(renderer, texture, pixels, m);
-    }
+    draw_lines((void *)&dl_args_void);
+    draw_screen(renderer, texture, pixels, m);
+   
 
     // TODO: server threads need to be cleaned up here
 
