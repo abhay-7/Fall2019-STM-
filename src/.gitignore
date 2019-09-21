@@ -1,0 +1,19 @@
+# dont track stuff on these folders:
+
+
+
+# dont track these file types:
+*.exe
+*.o
+
+
+
+# ignore these pacakges too
+*.dmg
+*.7z
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
