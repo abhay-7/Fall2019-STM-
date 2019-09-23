@@ -69,7 +69,6 @@ static inline void draw_line(SDL_Point p1, SDL_Point p2, tx_interval &tx_itval,
     int value;
     int i = 0;
 
-    m.lock();
 
     while (1)
     {
@@ -110,7 +109,6 @@ static inline void draw_line(SDL_Point p1, SDL_Point p2, tx_interval &tx_itval,
 
         if (x0 == x1 && y0 == y1)
         {
-            m.unlock();
             break;
         }
 
@@ -160,7 +158,7 @@ void *draw_lines(void *dl_args_void)
 
         end_pt = cart_to_screen(end_pt);
 
-        draw_line(start_pt, end_pt, temp_tx_interval, *pixels, *m);
+        draw_line(start_pt, end_pt, *queue[counter], *pixels, *m);
         counter++;
         std::cout << counter << std::endl;
     }
@@ -248,6 +246,8 @@ int main(int argc, char **argv)
         draw_lines((void *)&dl_args_void);
         draw_screen(renderer, texture, pixels, m);
     }
+    
+    free_tx_interval(scans);
 
     // TODO: server threads need to be cleaned up here
 
