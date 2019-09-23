@@ -168,20 +168,23 @@ void draw_screen(SDL_Renderer* renderer, SDL_Texture* texture,
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    m.lock();
+   
     SDL_UpdateTexture(texture, NULL, &pixels[0], TEX_WIDTH*4);
-    m.unlock();
 
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }
 
 
-int main(int argc, char** argv) {
-    //SafeQueue<tx_interval> queue;
+int main(int argc, char** argv) 
+{
+
+
     char* raw_binary_file_ptr = argv[1];
     FILE* binary_data = open_binary_file(raw_binary_file_ptr);
-    std::vector<tx_interval*>* scans = binary_file_to_sonogram_data(binary_data);
+  
+    std::vector<tx_interval*> scans = binary_file_to_sonogram_data(binary_data);
+
 
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -215,14 +218,15 @@ int main(int argc, char** argv) {
 
     dl_args dl_args_void;
     dl_args_void.pixels = &pixels;
-    dl_args_void.queue = (*scans);
+    dl_args_void.queue = (scans);
     dl_args_void.m = &m;
 
 
     draw_lines((void *)&dl_args_void);
     draw_screen(renderer, texture, pixels, m);
+ 
    
-
+   
     // TODO: server threads need to be cleaned up here
 
     if (texture) {
@@ -231,11 +235,13 @@ int main(int argc, char** argv) {
     if (renderer) {
         SDL_DestroyRenderer(renderer);
     }
+    
     if (window) {
         SDL_DestroyWindow(window);
     }
 
     SDL_Quit();
 
+  
     return 0;
 }
