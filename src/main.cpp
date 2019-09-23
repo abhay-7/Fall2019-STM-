@@ -197,12 +197,12 @@ void process_events(SDL_bool &running)
 
 int main(int argc, char **argv)
 {
-
+    //open and parse binary file
     char *raw_binary_file_ptr = argv[1];
     FILE *binary_data = open_binary_file(raw_binary_file_ptr);
-
     std::vector<tx_interval *> scans = binary_file_to_sonogram_data(binary_data);
 
+    //set up SDL
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << std::endl;
@@ -242,7 +242,6 @@ int main(int argc, char **argv)
 
     while (running)
     {
-
         // Process incoming events
         process_events(running);
 
