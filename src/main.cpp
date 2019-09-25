@@ -196,6 +196,7 @@ int main(int argc, char** argv)
 	while (!markerFound) {
 		//read in bufLen bytes
 		numRead = fread(buf, 1, ARRAY_LEN, fileIn);
+        std::cout << buf << std::endl;
 
 		if (numRead != ARRAY_LEN) {
 			//exit
@@ -335,7 +336,7 @@ int main(int argc, char** argv)
 
 		//check for marker
 		if (strstr(data.intensities, marker) != data.intensities) {
-			error("marker not found");
+			std::cout << "marker not found" << std::endl;
 		}
 
 		//update angle
