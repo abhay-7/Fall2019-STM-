@@ -1,271 +1,365 @@
-/*
- * This is the file where the magic happens
- * This is where all other files come together to 
- * instatiate the GUI, and start reading data from the probe
-*/
-
-#include <iostream> // cout, cerr
+//render ultrasound data
+//based on code by Saveliy Yusufov <sy2685@columbia.edu>
+#include <cstdio>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <cstring>
 #include <math.h>
-#include <stdlib.h>
-#include <pthread.h>
 #include <vector>
 #include <mutex>
-
-#include "binary_reader.cpp"
-//#include "server.cpp"
-#include "safe_queue.h"
-#include <stdio.h>
 #include <SDL2/SDL.h>
 
-#define SCREEN_WIDTH 500
-#define SCREEN_HEIGHT 500
-#define TEX_HEIGHT 500
-#define TEX_WIDTH 500
+//vector
+#include <vector>
 
-struct dl_args
-{
-    std::vector<unsigned char> *pixels;
-    std::vector<tx_interval *> queue;
-    std::mutex *m;
+//array length constant
+#define ARRAY_LEN 512
+
+//define constants for the rendering window
+#define SCREEN_WIDTH 700
+#define SCREEN_HEIGHT 700
+#define TEX_HEIGHT 700
+#define TEX_WIDTH 700
+
+//define constants for encoder resolution and data points per tx
+#define ENCODER_RES 4096
+#define NUM_DATA_POINTS 500
+#define MARKER_LEN 10
+#define OVERHEAD_LEN 12
+
+//define constant for length of rays
+#define RAY_LEN 500
+
+
+//struct for tx interval. holds the angle and the interval as array
+struct tx_interval {
+	double angle;
+	char intensities[ARRAY_LEN + 1];
 };
 
-static inline SDL_Point polar_to_cart(double r, double theta)
-{
-    SDL_Point point;
-    point.x = r * cos(theta);
-    point.y = r * sin(theta);
-    return point;
+
+//error print message and quit function
+void error(const char* errorMessage) {
+	std::cerr << errorMessage << std::endl;
+	exit(1);
 }
 
-static inline SDL_Point cart_to_screen(SDL_Point cart_pt)
-{
-    cart_pt.x += SCREEN_WIDTH * 0.5;
-    cart_pt.y = SCREEN_HEIGHT * 0.5 - cart_pt.y;
-    return cart_pt;
+//helper function for converting bytes to encoder value
+static inline Uint16 bytesToEncVal(Uint8 byte1, Uint8 byte2) {
+	return (((Uint16)byte1) << 8) | byte2;			//might not need the cast
 }
+
+//helper function for converting encoder val to angle w.r.t initial angle
+//---------------this is poorly written----------------------------//
+//----probably could use some sort of ternary---------//
+static inline double encValToAngle(Uint16 curVal) {
+	return (((double) curVal) * 2.0 * M_PI / ENCODER_RES) + (3.0 * M_PI / 2.0);
+}
+
+/*helper function for renderer: takes in reference to bool and checks if the 
+	renderer is still running. If not, it sets the bool to false
+*/
+void process_events(SDL_bool& running) {
+	SDL_Event event;
+
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) {
+			running = SDL_FALSE;
+		}
+	}
+}
+
+//helper functions for converting values to points on the screen
+static inline SDL_Point polar_to_cart(double r, double theta) {
+	SDL_Point point;
+	point.x = (int)(r * cos(theta));
+	point.y = (int)(r * sin(theta));
+	return point;
+}
+
+static inline SDL_Point cart_to_screen(SDL_Point cart_pt) {
+	cart_pt.x += (int)(SCREEN_WIDTH * 0.5);
+	cart_pt.y = (int)((-1) * cart_pt.y);
+	return cart_pt;
+}
+
+//helper function to duplicate byte 4 times into int
+static inline int colorAlphaToInt(Uint8 color, Uint8 alpha) {
+	return (alpha << 24) + (color << 16) + (color << 8) + color;
+}
+
 
 /*
  * Draw a line from the start point, `p1` to the end point, `p2`
  * Renders the line by drawing pixels from `p1` to `p2`
  */
-static inline void draw_line(SDL_Point p1, SDL_Point p2, tx_interval &tx_itval,
-                             std::vector<unsigned char> &pix, std::mutex &m)
-{
+static inline void draw_line(SDL_Point p1, SDL_Point p2, tx_interval& tx_itval,
+	Uint32 *pix) {
+	//copy over information
+	int x0 = p1.x;
+	int y0 = p1.y;
+	int x1 = p2.x;
+	int y1 = p2.y;
+	
+	//placeholder vars for current pixel
+	int xi;
+	int yi;
 
-    int x0 = p1.x;
-    int y0 = p1.y;
-    int x1 = p2.x;
-    int y1 = p2.y;
+	//vars for tracking color
+	int color;
+	int alpha;
+	Uint8 value;
 
-    int dx = abs(x1 - x0);
-    int sx = x0 < x1 ? 1 : -1;
-    int dy = abs(y1 - y0);
-    int sy = y0 < y1 ? 1 : -1;
-    int err = (dx > dy ? dx : -dy) * 0.5;
-    int e2;
+	//for each tx intensity value
+	for (int i = 0; i < NUM_DATA_POINTS; i++) {
+		//load the next intensity value
+		value = tx_itval.intensities[OVERHEAD_LEN + i];
 
-    int color;
-    int alpha;
-    int value;
-    int i = 0;
+		//calculate the current xi yi
+		xi = x0 + int((x1 - x0) * i / NUM_DATA_POINTS);
+		yi = y0 + int((y1 - y0) * i / NUM_DATA_POINTS);
 
 
-    while (1)
-    {
-        if (i < tx_itval.intensities.size())
-        {
-            value = tx_itval.intensities[i++];
-        }
-        else
-        {
-            value = 0;
-        }
+		//calculate the pixel position in the array
+		unsigned int offset = TEX_WIDTH * yi + xi;
 
-        unsigned int offset = (TEX_WIDTH * 4 * y0) + x0 * 4;
+		// For LOW voltage, the pixel is black and transparent
+		// For HIGH voltage, the pixel is white and opaque
+		// Otherwise, the pixel's color & transparency is the voltage value
+		if (value <= 27) {
+			color = 0;
+			alpha = SDL_ALPHA_TRANSPARENT;
+		}
+		else if (value > 199) {
+			color = 255;
+			alpha = SDL_ALPHA_OPAQUE;
+		}
+		
 
-        // For LOW voltage, the pixel is black and transparent
-        // For HIGH voltage, the pixel is white and opaque
-        // Otherwise, the pixel's color & transparency is the voltage value
-        if (value <= 25)
-        {
-            color = 0;
-            alpha = SDL_ALPHA_TRANSPARENT;
-        }
-        else if (value > 199)
-        {
-            color = 255;
-            alpha = SDL_ALPHA_OPAQUE;
-        }
-        else
-        {
-            color = value;
-            alpha = value;
-        }
+		else {
+			color = value;
+			alpha = value;
+		}
 
-        pix[offset] = color;     // b
-        pix[offset + 1] = color; // g
-        pix[offset + 2] = color; // r
-        pix[offset + 3] = alpha;
-
-        if (x0 == x1 && y0 == y1)
-        {
-            break;
-        }
-
-        e2 = err;
-
-        if (e2 > -dx)
-        {
-            err -= dy;
-            x0 += sx;
-        }
-        if (e2 < dy)
-        {
-            err += dx;
-            y0 += sy;
-        }
-    }
+		//update pixel array
+		pix[offset] = colorAlphaToInt(color, alpha);
+	}
 }
 
-// Helper function to draw as many lines as possible
-void *draw_lines(void *dl_args_void)
+//redraws the screen
+void draw_screen(SDL_Renderer* renderer, SDL_Texture* texture, 
+				 Uint32 *pixels) 
 {
-    dl_args *draw_lines_args = (struct dl_args *)dl_args_void;
-    std::vector<unsigned char> *pixels = draw_lines_args->pixels;
-    std::vector<tx_interval *> queue = draw_lines_args->queue;
-    std::mutex *m = draw_lines_args->m;
+	//update the texture
+	SDL_UpdateTexture(texture, NULL, pixels, TEX_WIDTH * sizeof(Uint32));
 
-    double const X_ORIGIN = SCREEN_WIDTH / 2;
-    double const Y_ORIGIN = 0;
-    SDL_Point start_pt;
-    start_pt.x = X_ORIGIN;
-    start_pt.y = Y_ORIGIN;
-
-    int distance = 150;
-    tx_interval temp_tx_interval;
-
-    int counter = 0;
-    for (auto &x : queue)
-    {
-        double angle = queue[counter]->angle;
-
-        if (angle < 3.67 || angle > 5.76)
-        {
-            continue;
-        }
-        // TODO: distance should be based on length of interval
-        SDL_Point end_pt = polar_to_cart(distance, temp_tx_interval.angle);
-
-        end_pt = cart_to_screen(end_pt);
-
-        draw_line(start_pt, end_pt, *queue[counter], *pixels, *m);
-        counter++;
-        std::cout << counter << std::endl;
-    }
-
-    return NULL;
+	//render
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderPresent(renderer);
 }
 
-void draw_screen(SDL_Renderer *renderer, SDL_Texture *texture,
-                 std::vector<unsigned char> &pixels, std::mutex &m)
+
+int main(int argc, char** argv)
 {
+	//-------------------file reading stuff------------------------//
+	//read in binary file looking for the first marker
+	//vars for the file objects and file names
+	FILE *fileIn;
 
-    // Clear screen
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(renderer);
+	//file name. one is scans on is test
+    char *fileName = argv[1];
 
-    SDL_UpdateTexture(texture, NULL, &pixels[0], TEX_WIDTH * 4);
+	errno_t fileError;
 
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);
-}
+	//vars for marker
+	char marker[] = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
+	bool markerFound = false;
+	char* markerStart;
 
-void process_events(SDL_bool &running)
-{
-    SDL_Event event;
+	//vars for tracking reading and the input buffer
+	size_t numRead = 0;
+	long offset = 0;
+	char buf[ARRAY_LEN + 1];
 
-    while (SDL_PollEvent(&event))
-    {
-        if (event.type == SDL_QUIT)
-        {
-            running = SDL_FALSE;
-        }
-    }
-}
+	//null terminate the buffer for ease of computation
+	buf[ARRAY_LEN] = '\0';
 
-int main(int argc, char **argv)
-{
-    //open and parse binary file
-    char *raw_binary_file_ptr = argv[1];
-    FILE *binary_data = open_binary_file(raw_binary_file_ptr);
-    std::vector<tx_interval *> scans = binary_file_to_sonogram_data(binary_data);
+	//open the file
+	fileIn = fopen(fileName,"rb");
+	if (fileIn == 0) {
+		error("failed fopen of input");
+	}
 
-    //set up SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-    {
-        std::cerr << "SDL_Init failed: " << SDL_GetError() << std::endl;
-        return 1;
-    }
+	//find first set of 10 0xff (marker)
+	while (!markerFound) {
+		//read in bufLen bytes
+		numRead = fread(buf, 1, ARRAY_LEN, fileIn);
 
-    SDL_Window *window = SDL_CreateWindow("Columbia Open-Source UltraSound",
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          600,
-                                          600,
-                                          SDL_WINDOW_SHOWN);
+		if (numRead != ARRAY_LEN) {
+			//exit
+			std::cerr << "failed fread at start" << std::endl;
+			std::cerr << "numRead: " << numRead << std::endl;
+			return 1;
+		}
 
-    SDL_Renderer *renderer = SDL_CreateRenderer(window,
-                                                -1,
-                                                SDL_RENDERER_ACCELERATED);
+		//check for marker in the read string
+		markerStart = strstr(buf, marker);
 
-    SDL_Texture *texture = SDL_CreateTexture(renderer,
-                                             SDL_PIXELFORMAT_ARGB8888,
-                                             SDL_TEXTUREACCESS_STREAMING,
-                                             TEX_WIDTH,
-                                             TEX_HEIGHT);
+		//if marker found, set markerFound, fseek to start of marker
+		if (markerStart) {
+			markerFound = true;
 
-    SDL_bool running = SDL_TRUE;
+			//calculate offset, move pointer back
+			offset = -1 * strlen(markerStart);
+			fseek(fileIn, offset, SEEK_CUR);
+		}
+	}
 
-    std::mutex m;
-    std::vector<unsigned char> pixels(TEX_WIDTH * TEX_HEIGHT * 4, 0);
 
-    SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderPresent(renderer);
+	//-----------------------------rendering stuff -------------------//
 
-    dl_args dl_args_void;
-    dl_args_void.pixels = &pixels;
-    dl_args_void.queue = (scans);
-    dl_args_void.m = &m;
 
-    while (running)
-    {
-        // Process incoming events
-        process_events(running);
+	//vars to keep track of rendering status
+	SDL_bool running = SDL_TRUE;
+	
+	//vars for pixels in the rendering screen and tx_interval
+	Uint32 *pixels = new Uint32[TEX_WIDTH * TEX_HEIGHT];
+	tx_interval data;
 
-        draw_lines((void *)&dl_args_void);
-        draw_screen(renderer, texture, pixels, m);
-    }
-    
-    free_tx_interval(scans);
+	//black out the pixel array
+	for (int i = 0; i < TEX_WIDTH * TEX_HEIGHT; i++) {
+		pixels[i] = 255 << 24;
+	}
 
-    // TODO: server threads need to be cleaned up here
 
-    if (texture)
-    {
-        SDL_DestroyTexture(texture);
-    }
-    if (renderer)
-    {
-        SDL_DestroyRenderer(renderer);
-    }
+	//null terminate the array
+	data.intensities[ARRAY_LEN] = '\0';
 
-    if (window)
-    {
-        SDL_DestroyWindow(window);
-    }
+	//vars for starting angle
+	double startAngle;
+	const double ANGLE_STRAIGHT_DOWN = 3 * M_PI / 2;
 
-    SDL_Quit();
+	//var for encoder position
+	Uint16 encoderPos;
 
-    return 0;
+	
+	//read first set of data directly into tx_interval
+	numRead = fread(data.intensities, 1, ARRAY_LEN, fileIn);
+	if (numRead != ARRAY_LEN) {
+		error("fread error");
+	}
+	
+
+	/*
+	//super fake data
+	for (int i = 0; i < ARRAY_LEN; i++) {
+		data.intensities[i] = i % 255;
+	}
+	*/
+
+	//set initial encoder value, starting angle, initial vals
+	encoderPos = bytesToEncVal(data.intensities[MARKER_LEN], data.intensities[MARKER_LEN + 1]);
+	startAngle = encValToAngle(encoderPos);
+	data.angle = ANGLE_STRAIGHT_DOWN;
+
+	//vars for setting screen origin as an SDL_Point and for end point
+	const int X_ORIGIN = SCREEN_WIDTH / 2;
+	const int Y_ORIGIN = 0;
+	SDL_Point start_pt;
+	SDL_Point end_pt;
+	start_pt.x = X_ORIGIN;
+	start_pt.y = Y_ORIGIN;
+
+
+
+	//initialize SDL
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+		std::cerr << "SDL_Init failed: " << SDL_GetError() << std::endl;
+		return 1;
+	}
+
+	//create SDL window
+	SDL_Window* window = SDL_CreateWindow("Columbia Open-Source UltraSound",
+		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+
+	//create SDL renderer
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+
+	//creeate SDL texture
+	SDL_Texture* texture = SDL_CreateTexture(renderer,
+		SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STATIC,
+		TEX_WIDTH,
+		TEX_HEIGHT);
+
+	//set rendering color to black
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+	SDL_UpdateTexture(texture, NULL, pixels, TEX_WIDTH * sizeof(Uint32));
+
+	//reset renderer and prepare for rendering
+	SDL_RenderClear(renderer);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderPresent(renderer);
+
+
+	
+
+	//main rendering loop
+	while (running) {
+		//check if renderer was closed using helper function
+		process_events(running);
+
+		
+		//test: play with angles
+		if (data.angle < 5.00) {
+			data.angle += 0.0001;
+		}
+		else {
+			data.angle = ANGLE_STRAIGHT_DOWN;
+		}
+		
+
+		//calculate end point
+		end_pt = polar_to_cart(RAY_LEN, data.angle);
+		end_pt = cart_to_screen(end_pt);
+
+		//draw the line and update the screen
+		draw_line(start_pt, end_pt, data, pixels);
+		draw_screen(renderer, texture, pixels);
+		
+		//read in next set of data
+		fread(data.intensities, 1, ARRAY_LEN, fileIn);
+
+		//check for marker
+		if (strstr(data.intensities, marker) != data.intensities) {
+			error("marker not found");
+		}
+
+		//update angle
+		//calculate encoder pos and corresponding angle
+		encoderPos = bytesToEncVal(data.intensities[MARKER_LEN], data.intensities[MARKER_LEN + 1]);
+		data.angle = encValToAngle(encoderPos) - startAngle + ANGLE_STRAIGHT_DOWN;
+	}
+
+
+
+	//once renderer is closed, deallocate resources and quit SDL
+	if (texture) {
+		SDL_DestroyTexture(texture);
+	}
+	if (renderer) {
+		SDL_DestroyRenderer(renderer);
+	}
+	if (window) {
+		SDL_DestroyWindow(window);
+	}
+	SDL_Quit();
+	delete[] pixels;
+	fclose(fileIn);
+
+
+	return 0;
 }
