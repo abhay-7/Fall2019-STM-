@@ -10,22 +10,6 @@
 #include <mutex>
 #include <SDL2/SDL.h>
 
-//From the Library "dear imgui"
-#include "imgui.h"
-#include "imconfig.h"
-#include "imstb_rectpack.h"
-//#include "imstb_textedit.h"
-#include "imstb_truetype.h"
-#include "imgui_demo.cpp"
-#include "imgui_draw.cpp"
-//#include "imgui_internal.h"
-#include "imgui_widgets.cpp"
-#include "imgui.cpp"
-
-IMGUI_API bool ImGui_ImplSdlGL3_Init(SDL_Window* window);
-IMGUI_API void ImGui_ImplSdlGL3_Shutdown();
-IMGUI_API void ImGui_ImplSdlGL3_NewFrame(SDL_Window* window);
-IMGUI_API bool ImGui_ImplSdlGL3_ProcessEvent(SDL_Event* event);
 
 //vector
 #include <vector>
@@ -105,42 +89,6 @@ static inline SDL_Point cart_to_screen(SDL_Point cart_pt) {
 static inline int colorAlphaToInt(Uint8 color, Uint8 alpha) {
 	return (alpha << 24) + (color << 16) + (color << 8) + color;
 }
-
-
-void createGUI()
-{
-    ImGui::Render();
-    bool active = true;
-    ImGui::Begin("My First Tool", &active, ImGuiWindowFlags_MenuBar);
-    if (ImGui::BeginMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
-            if (ImGui::MenuItem("Save", "Ctrl+S"))   { /* Do stuff */ }
-            if (ImGui::MenuItem("Close", "Ctrl+W"))  { active = false; }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenuBar();
-    }
-
-    // Edit a color (stored as ~4 floats)
-    float col;
-    ImGui::ColorEdit4("Color", &col);
-
-    // Plot some values
-    const float my_values[] = { 0.2f, 0.1f, 1.0f, 0.5f, 0.9f, 2.2f };
-    ImGui::PlotLines("Frame Times", my_values, sizeof(my_values));
-
-    // Display contents in a scrolling region
-    ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
-    ImGui::BeginChild("Scrolling");
-    for (int n = 0; n < 50; n++)
-       ImGui::Text("%04d: Some text", n);
-    ImGui::EndChild();
-    ImGui::End();
-}
-
 
 
 /*
@@ -357,13 +305,6 @@ int main(int argc, char** argv)
 	SDL_RenderClear(renderer);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderPresent(renderer);
-
-
-	
-    //create GUI
-    // Create a window called "My First Tool", with a menu bar.
-    //createGUI();
-   
 
 
 	//main rendering loop
