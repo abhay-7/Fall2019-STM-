@@ -27,7 +27,7 @@ std::vector<unsigned short> intensity_values(char* char_intensities)
     int counter = 0;
     while (counter < limit)
     {
-        //std::cout << "intensity values: " << (int)*p << " counter: " << counter << std::endl;
+        std::cout << "intensity values: " << (int)*p << " counter: " << counter << std::endl;
         intensities.push_back((unsigned short)*p);
         p = p + 1;
         counter++;
@@ -94,7 +94,7 @@ std::vector<tx_interval*> binary_file_to_sonogram_data(FILE* binary_file)
             sonogram_data->angle = (int)*p; /* Standard Lib char* to double */
             sonogram_data->intensities = intensity_values(intensities); /* in house formatting */
 
-            //std::cout << "This is the angle" << (int)*p << std::endl;
+            std::cout << "This is the angle" << (int)*p << std::endl;
             scans.push_back(sonogram_data);
         }
     } 
@@ -112,6 +112,7 @@ tx_interval* create_tx_interval()
 }
 
 //frees the tx interval scans
+//prevents a memory leak
 void free_tx_interval(std::vector<tx_interval*> scans)
 {
     for (auto& x: scans)

@@ -11,7 +11,7 @@ CXXFLAGS = -std=c++11 -Wall -O3 # $(INCLUDES)
 # Linking options:
 LDFLAGS = -L lib
 
-# Libraries needed to link with
+# Libraries needed to link withl
 LDLIBS = -lSDL2 -lm
 
 
