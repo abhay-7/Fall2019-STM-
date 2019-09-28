@@ -1,0 +1,4 @@
+/Users/chris/Desktop/Fall2019Ultrasound/gui_src/build-3DUltrasound-Desktop_x86_darwin_generic_mach_o_64bit-Debug/CMakeFiles/rebuild_cache.dir
+/Users/chris/Desktop/Fall2019Ultrasound/gui_src/build-3DUltrasound-Desktop_x86_darwin_generic_mach_o_64bit-Debug/CMakeFiles/edit_cache.dir
+/Users/chris/Desktop/Fall2019Ultrasound/gui_src/build-3DUltrasound-Desktop_x86_darwin_generic_mach_o_64bit-Debug/CMakeFiles/3DUltrasound.dir
+/Users/chris/Desktop/Fall2019Ultrasound/gui_src/build-3DUltrasound-Desktop_x86_darwin_generic_mach_o_64bit-Debug/CMakeFiles/3DUltrasound_autogen.dir
