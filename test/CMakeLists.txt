@@ -8,7 +8,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include/Visualization)
 
 add_executable(test_visualizer test_visualizer.cpp)
 
-link_directories(${CMAKE_SOURCE_DIR}/install/libs)
+link_directories(${CMAKE_SOURCE_DIR}/install/libs
+				 ${CMAKE_SOURCE_DIR}/build/src/)
 target_link_libraries( test_visualizer libvisualization.a)
  
 install(TARGETS test_visualizer DESTINATION ${CMAKE_SOURCE_DIR}/install/test/)
