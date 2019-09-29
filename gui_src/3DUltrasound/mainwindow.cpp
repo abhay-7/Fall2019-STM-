@@ -3,7 +3,27 @@
 #include <iostream>
 #include <cstdio>
 
+#define SCREEN_WIDTH 700
+#define SCREEN_HEIGHT 700
+#define TEX_HEIGHT 700
+#define TEX_WIDTH 700
+
 #define ARRAY_LEN 512
+
+#define ENCODER_RES 4096
+#define NUM_DATA_POINTS 500
+#define MARKER_LEN 10
+#define OVERHEAD_LEN 12
+
+
+//define constant for length of rays
+#define RAY_LEN 500
+
+
+
+
+
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 }
+
 
 MainWindow::~MainWindow()
 {
@@ -32,15 +53,17 @@ void MainWindow::on_actionOpen_triggered()
 
     fileIn = fopen(sonogram_data, "rb");
 
+    //SIGNAL PROCESSING CODE WILL GO HERE:
+
+    //ProcessSignal(fileIn)
+
+    //Put the FILE* into an easily parsable data structure
+    ProcessFile(fileIn);
 }
-
-
 
 
 void MainWindow::ProcessFile(FILE* fileIn)
 {
-
-
     //vars for marker
     char marker[] = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
     bool markerFound = false;
@@ -55,7 +78,7 @@ void MainWindow::ProcessFile(FILE* fileIn)
     buf[ARRAY_LEN] = '\0';
 
     while (!markerFound)
-{
+    {
         //read in bufLen bytes
         numRead = fread(buf, 1, ARRAY_LEN, fileIn);
 
@@ -70,18 +93,16 @@ void MainWindow::ProcessFile(FILE* fileIn)
         markerStart = strstr(buf, marker);
 
         //if marker found, set markerFound, fseek to start of marker
-        if (markerStart) {
+        if (markerStart)
+        {
             markerFound = true;
 
             //calculate offset, move pointer back
             offset = -1 * strlen(markerStart);
             fseek(fileIn, offset, SEEK_CUR);
         }
+
+        fclose(fileIn);
     }
-
-
-
-
-
 
 }
