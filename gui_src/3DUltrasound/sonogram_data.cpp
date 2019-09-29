@@ -1,9 +1,6 @@
-#include <vector>
-#include "mainwindow.h"
+#include "sonogram_data.h"
 
-//We use implicit construcots for now...
-
-std::vector<sonogram_structure> SonogramData::get_data_to_render(MainWindow idempotent)
+sonogram_data::sonogram_data()
 {
-    return idempotent.sonogram_data_to_render;
+
 }

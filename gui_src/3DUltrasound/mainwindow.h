@@ -38,9 +38,16 @@ private:
 class SonogramData
 {
 public:
-    std::vector<sonogram_structure> get_data_to_render(MainWindow idempotent);
-private:
+    std::vector<sonogram_structure> get_data_to_render();
+    void set_data_to_render(std::vector<sonogram_structure>);
 
+    std::vector<double> get_angles();
+
+    SonogramData();
+    ~SonogramData();
+
+private:
+    std::vector<sonogram_structure> data_to_render;
     int length; //length of sonogram data
     double firstTimeStamp;
     double firstAngle;

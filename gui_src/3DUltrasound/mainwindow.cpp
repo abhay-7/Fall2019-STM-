@@ -33,6 +33,39 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+SonogramData::SonogramData()
+{
+
+}
+SonogramData::~SonogramData()
+{
+}
+
+
+std::vector<sonogram_structure> SonogramData::get_data_to_render()
+{
+    return this->data_to_render;
+}
+
+void SonogramData::set_data_to_render(std::vector<sonogram_structure> data)
+{
+    this->data_to_render = data;
+}
+
+
+//Places all the ecnoder angles in a single list
+std::vector<double> SonogramData::get_angles()
+{
+   std::vector<double> angles;
+   for(unsigned int i = 0; i < this->data_to_render.size(); i++) //unsignd int stops a compiler warning
+   {
+       angles.push_back(this->data_to_render[i].encoder_angle);
+   }
+
+   return angles;
+}
+
+
 
 void MainWindow::on_actionOpen_triggered()
 {
@@ -52,50 +85,17 @@ void MainWindow::on_actionOpen_triggered()
 
     //Put the FILE* into an easily parsable data structure
     ProcessFile(fileIn);
+
+    //SongramData is a Data strucute that should make the rendering team's life a bit easier...
+    SonogramData rendering_data;
+    std::vector<sonogram_structure> data_to_render = this->sonogram_data_to_render;
+    rendering_data.set_data_to_render(data_to_render);
+
 }
 
 //Most of this is just a re-implemantation of Fuming's code (Summer 2019 on the Github)
 void MainWindow::ProcessFile(FILE* fileIn)
 {
-    //vars for marker
-    char marker[] = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
-    bool markerFound = false;
-    char* markerStart;
 
-    //vars for tracking reading and the input buffer
-    size_t numRead = 0;
-    long offset = 0;
-    char buf[ARRAY_LEN + 1];
-
-    //null terminate the buffer for ease of computation
-    buf[ARRAY_LEN] = '\0';
-
-    while (!markerFound)
-    {
-        //read in bufLen bytes
-        numRead = fread(buf, 1, ARRAY_LEN, fileIn);
-
-        if (numRead != ARRAY_LEN) {
-            //exit
-            std::cerr << "failed fread at start" << std::endl;
-            std::cerr << "numRead: " << numRead << std::endl;
-            system(0);
-        }
-
-        //check for marker in the read string
-        markerStart = strstr(buf, marker);
-
-        //if marker found, set markerFound, fseek to start of marker
-        if (markerStart)
-        {
-            markerFound = true;
-
-            //calculate offset, move pointer back
-            offset = -1 * strlen(markerStart);
-            fseek(fileIn, offset, SEEK_CUR);
-        }
-
-        fclose(fileIn);
-    }
 
 }
