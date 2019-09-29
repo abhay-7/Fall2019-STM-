@@ -38,14 +38,30 @@ private:
 class SonogramData
 {
 public:
-    std::vector<sonogram_structure> get_data_to_render();
-    void set_data_to_render(std::vector<sonogram_structure>);
+    //Consider this section of the Class to eb the "API" for rendering
 
+
+    //Returns the raw vector of sonogram data.
+    //Each entry contains the struct sonogram_sturcture (see sonogram_structure.h)
+    std::vector<sonogram_structure> get_data_to_render();
+
+    //Returns all the encoder angles in a vector
     std::vector<double> get_angles();
+
+    //Returns all the intensity values in a vector of vectors
     std::vector<std::vector<int>> get_intensities();
 
+    //More to come...
+
+
+
+    //Mechanics :
+
+    void set_data_to_render(std::vector<sonogram_structure>);
     SonogramData();
     ~SonogramData();
+
+
 
 private:
     std::vector<sonogram_structure> data_to_render;
