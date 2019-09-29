@@ -1,0 +1,4 @@
+#ifndef SONOGRAM_DATA_H
+#define SONOGRAM_DATA_H
+
+#endif // SONOGRAM_DATA_H

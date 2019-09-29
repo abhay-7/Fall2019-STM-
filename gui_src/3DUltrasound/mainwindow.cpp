@@ -20,11 +20,6 @@
 #define RAY_LEN 500
 
 
-
-
-
-
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -49,8 +44,6 @@ void MainWindow::on_actionOpen_triggered()
     //Concert from Qt's nonsense to a normal FILE* setup
     QByteArray ba = filename.toLocal8Bit();
     const char *sonogram_data = ba.data();
-
-
     fileIn = fopen(sonogram_data, "rb");
 
     //SIGNAL PROCESSING CODE WILL GO HERE:
@@ -61,7 +54,7 @@ void MainWindow::on_actionOpen_triggered()
     ProcessFile(fileIn);
 }
 
-
+//Most of this is just a re-implemantation of Fuming's code (Summer 2019 on the Github)
 void MainWindow::ProcessFile(FILE* fileIn)
 {
     //vars for marker
