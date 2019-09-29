@@ -42,6 +42,7 @@ public:
     void set_data_to_render(std::vector<sonogram_structure>);
 
     std::vector<double> get_angles();
+    std::vector<std::vector<int>> get_intensities();
 
     SonogramData();
     ~SonogramData();

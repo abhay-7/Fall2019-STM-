@@ -66,6 +66,26 @@ std::vector<double> SonogramData::get_angles()
 }
 
 
+//Places all the intensity values into a list of vectors of ints
+std::vector<std::vector<int>> SonogramData::get_intensities()
+{
+   std::vector<std::vector<int>> intensities;
+
+   for(unsigned int i = 0; i < this->data_to_render.size(); i++) //unsignd int stops a compiler warning
+   {
+       std::vector<int> char_to_int;
+       for (int j = 0; j < 513; j++)
+       {
+           char_to_int.push_back(this->data_to_render[i].sonogram_intensities[j]);
+       }
+
+       intensities.push_back(char_to_int);
+   }
+
+   return intensities;
+}
+
+
 
 void MainWindow::on_actionOpen_triggered()
 {
