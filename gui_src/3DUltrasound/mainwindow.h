@@ -50,7 +50,7 @@ private:
 class SonogramData
 {
 public:
-    //Consider this section of the Class to eb the "API" for rendering
+    //Consider this section of the Class to be the "API" for rendering
 
 
     //Returns the raw vector of sonogram data.
@@ -60,12 +60,20 @@ public:
     //Returns all the encoder angles in a vector
     std::vector<double> get_angles();
 
+    //Gets a single encoder angle at a specified position
+    double get_angle(unsigned int pos);
+
+
+    std::vector<int> get_single_intensities(unsigned int pos);
+
     //Returns all the intensity values in a vector of vectors
-    std::vector<std::vector<int>> get_intensities();
+    std::vector<std::vector<int>> get_all_intensities();
+
+
+    bool get_check_sum(unsigned int pos);
+    std::vector<bool> get_check_sums();
 
     //More to come...
-
-
 
     //Mechanics :
 
