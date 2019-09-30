@@ -86,13 +86,6 @@ std::vector<std::vector<int>> SonogramData::get_intensities()
 }
 
 
-
-void MainWindow::open_file_triggered()
-{
-
-
-}
-
 //Most of this is just a re-implemantation of Fuming's code (Summer 2019 on the Github)
 void MainWindow::ProcessFile(FILE* fileIn)
 {
@@ -104,7 +97,7 @@ void MainWindow::on_open_file_triggered()
     FILE *fileIn;
 
     //Open dialog to read in the file
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open the file"), "~/Desktop", tr("*.txt")); //Update this for out custom file extension (whatever that will be)
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open the file"), "/~/Desktop", tr("*.txt")); //Update this for out custom file extension (whatever that will be)
 
     //Concert from Qt's nonsense to a normal FILE* setup
     QByteArray ba = filename.toLocal8Bit();
@@ -122,4 +115,18 @@ void MainWindow::on_open_file_triggered()
     SonogramData rendering_data;
     std::vector<sonogram_structure> data_to_render = this->sonogram_data_to_render;
     rendering_data.set_data_to_render(data_to_render);
+}
+
+
+//opens link to Organizaiton page on Github
+void MainWindow::on_actionGithub_triggered()
+{
+    QDesktopServices::openUrl(QUrl("https://github.com/ColumbiaOpenSourceUltrasound", QUrl::TolerantMode));
+}
+
+
+//Opens up an email client with Yazmin as the address
+void MainWindow::on_actionContact_triggered()
+{
+    QDesktopServices::openUrl(QUrl("mailto:yf2233@columbia.edu?subject=Help Regarding Ultrasound Software&body=Please inlude a brief summary of issue. If this issue is a bug, please inlcude a way to reproduce the error if possible.", QUrl::TolerantMode));
 }
