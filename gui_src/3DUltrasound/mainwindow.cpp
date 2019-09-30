@@ -87,7 +87,7 @@ std::vector<std::vector<int>> SonogramData::get_intensities()
 
 
 //Most of this is just a re-implemantation of Fuming's code (Summer 2019 on the Github)
-void MainWindow::ProcessFile(FILE* fileIn)
+std::vector<sonogram_structure>  MainWindow::ProcessFile(FILE* fileIn)
 {
 
 }
@@ -109,12 +109,8 @@ void MainWindow::on_open_file_triggered()
     //ProcessSignal(fileIn)
 
     //Put the FILE* into an easily parsable data structure
-   // ProcessFile(fileIn);
+    this->sonogram_data_to_render = ProcessFile(fileIn);
 
-    //SongramData is a Data strucute that should make the rendering team's life a bit easier...
-    SonogramData rendering_data;
-    std::vector<sonogram_structure> data_to_render = this->sonogram_data_to_render;
-    rendering_data.set_data_to_render(data_to_render);
 }
 
 
@@ -129,4 +125,36 @@ void MainWindow::on_actionGithub_triggered()
 void MainWindow::on_actionContact_triggered()
 {
     QDesktopServices::openUrl(QUrl("mailto:yf2233@columbia.edu?subject=Help Regarding Ultrasound Software&body=Please inlude a brief summary of issue. If this issue is a bug, please inlcude a way to reproduce the error if possible.", QUrl::TolerantMode));
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    if(this->sonogram_data_to_render.size() < 2)
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Warning! Please load a file before rendering");
+        msgBox.exec();
+    }
+
+    else
+    {
+        SonogramData data;
+        data.set_data_to_render(this->sonogram_data_to_render);
+
+        //Inlcuder render code here
+        /*
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         */
+
+    }
+
 }

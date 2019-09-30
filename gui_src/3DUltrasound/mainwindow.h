@@ -22,6 +22,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+//slots are specials functions that deal with events
+//in Qt lingo, events like a mouse click, or scroll, are called "signals"
+//Every signal has a corresponding slot (function)
 private slots:
 
     void on_open_file_triggered();
@@ -30,9 +33,11 @@ private slots:
 
     void on_actionContact_triggered();
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
-    void ProcessFile(FILE* fileIN);
+    std::vector<sonogram_structure>  ProcessFile(FILE* fileIN);
     int FindFirstMarker(char* c, long x, char [], FILE *fileIn);
     std::vector<sonogram_structure> sonogram_data_to_render;
 
@@ -67,8 +72,6 @@ public:
     void set_data_to_render(std::vector<sonogram_structure>);
     SonogramData();
     ~SonogramData();
-
-
 
 private:
     std::vector<sonogram_structure> data_to_render;
