@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <cstdio>
 #include <iostream>
 #include <vector>
@@ -21,7 +22,11 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_actionOpen_triggered();
+   // void file_open_triggered();
+
+    void open_file_triggered();
+
+    void on_open_file_triggered();
 
 private:
     Ui::MainWindow *ui;

@@ -87,12 +87,24 @@ std::vector<std::vector<int>> SonogramData::get_intensities()
 
 
 
-void MainWindow::on_actionOpen_triggered()
+void MainWindow::open_file_triggered()
+{
+
+
+}
+
+//Most of this is just a re-implemantation of Fuming's code (Summer 2019 on the Github)
+void MainWindow::ProcessFile(FILE* fileIn)
+{
+
+}
+
+void MainWindow::on_open_file_triggered()
 {
     FILE *fileIn;
 
     //Open dialog to read in the file
-    QString filename = QFileDialog::getOpenFileName(this, "Open the file");
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open the file"), "~/Desktop", tr("*.txt")); //Update this for out custom file extension (whatever that will be)
 
     //Concert from Qt's nonsense to a normal FILE* setup
     QByteArray ba = filename.toLocal8Bit();
@@ -104,18 +116,10 @@ void MainWindow::on_actionOpen_triggered()
     //ProcessSignal(fileIn)
 
     //Put the FILE* into an easily parsable data structure
-    ProcessFile(fileIn);
+   // ProcessFile(fileIn);
 
     //SongramData is a Data strucute that should make the rendering team's life a bit easier...
     SonogramData rendering_data;
     std::vector<sonogram_structure> data_to_render = this->sonogram_data_to_render;
     rendering_data.set_data_to_render(data_to_render);
-
-}
-
-//Most of this is just a re-implemantation of Fuming's code (Summer 2019 on the Github)
-void MainWindow::ProcessFile(FILE* fileIn)
-{
-
-
 }
