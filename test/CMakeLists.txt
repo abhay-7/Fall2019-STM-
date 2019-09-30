@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_BUILD_TYPE Release)
 
 find_package(VTK REQUIRED)
+#find_package(Qt REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/include/Visualization /usr/local/include/vtk-8.90)
 
@@ -15,6 +16,7 @@ link_directories(${CMAKE_SOURCE_DIR}/install/libs
 
 target_link_libraries( test_visualizer 
 						${CMAKE_SOURCE_DIR}/build/src/Visualization/libvisualization.a
-						${VTK_LIBRARIES})
+						${VTK_LIBRARIES}
+						)
  
 #install(TARGETS test_visualizer DESTINATION ${CMAKE_SOURCE_DIR}/install/test/)
