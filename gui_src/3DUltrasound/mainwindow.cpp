@@ -3,6 +3,9 @@
 #include <iostream>
 #include <cstdio>
 
+#include <QPointer>
+#include <QVTKOpenGLWidget.h>
+
 #define SCREEN_WIDTH 700
 #define SCREEN_HEIGHT 700
 #define TEX_HEIGHT 700
@@ -125,6 +128,45 @@ std::vector<bool> SonogramData::get_check_sums()
 
 std::vector<sonogram_structure>  MainWindow::ProcessFile(FILE* fileIn)
 {
+    char marker[] = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
+    bool markerFound = false;
+    char* markerStart;
+
+    //vars for tracking reading and the input buffer
+    size_t numRead = 0;
+    long offset = 0;
+    char buf[ARRAY_LEN + 1];
+
+    //null terminate the buffer for ease of computation
+    buf[ARRAY_LEN] = '\0';
+
+    //find first set of 10 0xff (marker)
+    while (!markerFound) {
+        //read in bufLen bytes
+        numRead = fread(buf, 1, ARRAY_LEN, fileIn);
+
+        if (numRead != ARRAY_LEN) {
+            //exit
+            std::cerr << "failed fread at start" << std::endl;
+            std::cerr << "numRead: " << numRead << std::endl;
+        }
+
+        //check for marker in the read string
+        markerStart = strstr(buf, marker);
+
+        //if marker found, set markerFound, fseek to start of marker
+        if (markerStart) {
+            markerFound = true;
+
+            //calculate offset, move pointer back
+            offset = -1 * strlen(markerStart);
+            fseek(fileIn, offset, SEEK_CUR);
+        }
+    }
+
+    //Now we will in the data structure
+
+
 
 }
 
@@ -142,9 +184,6 @@ void MainWindow::on_open_file_triggered()
     const char *sonogram_data = ba.data();
     fileIn = fopen(sonogram_data, "rb");
 
-    //SIGNAL PROCESSING CODE WILL GO HERE:
-
-    //ProcessSignal(fileIn)
 
     //Put the FILE* into an easily parsable data structure
     //this->sonogram_data_to_render = ProcessFile(fileIn);
@@ -169,6 +208,14 @@ void MainWindow::on_pushButton_clicked()
 {
     if(this->sonogram_data_to_render.size() < 2)
     {
+
+        QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
+
+        QPointer<QVTKOpenGLWidget> widget = new QVTKOpenGLWidget();
+
+
+
+
         QMessageBox msgBox;
         msgBox.setText("Warning! Please load a file before rendering");
         msgBox.exec();
