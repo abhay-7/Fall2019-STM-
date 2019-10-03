@@ -4,7 +4,7 @@ set(CMAKE_BUILD_TYPE Release)
 
 find_package(VTK REQUIRED)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -g")
 
 include_directories(${CMAKE_SOURCE_DIR}/include/Visualization ${VTK_INCLUDE_DIRS}) 
 

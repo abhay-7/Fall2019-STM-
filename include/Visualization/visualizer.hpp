@@ -1,42 +1,68 @@
 #ifndef STM_VIZ 
 #define STM_VIZ
 
+#include <vector>
+#include <array>
+#include <unistd.h>
+
 #include <vtkSmartPointer.h>
-#include <vtkImageData.h>
-#include <vtkImageActor.h>
-#include <vtkPolyData.h>
 #include <vtkDataSetMapper.h>
-#include <vtkPolyDataMapper.h>
+#include <vtkPoints.h>
+#include <vtkStructuredGrid.h>
+#include <vtkSphereSource.h>
+#include <vtkThreshold.h>
+#include <vtkProperty.h>
+
+#include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
-#include <vtkRenderer.h>
-#include <vtkImageDataGeometryFilter.h>
-#include <vtkPointOccupancyFilter.h>
-#include <vtkThreshold.h>
-#include <vtkCamera.h>
-#include <vtkProperty.h>
-#include <vtkNamedColors.h>
-#include <vtkMarchingCubes.h>
-#include <vtkVoxelModeller.h>
 
+#include <vtkMarchingCubes.h>
+#include <vtkPointOccupancyFilter.h>
+
+using namespace std;
 
 class Visualizer
 {
 	private:
-		vtkNew<vtkPoints> points;
-		vtkSmartPointer<vtkImageData> imageData;
-		vtkSmartPointer<vtkDataSetMapper> mapper;
-		vtkSmartPointer<vtkActor> actor;
-		vtkSmartPointer<vtkRenderer> renderer;
-		vtkSmartPointer<vtkRenderWindow> renderWindow;
-		vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor;
+
+		//Members containing grid properties
+		double mDims[3];
+		double mResolution;
+
+		//Data structures storing the pointd or the scan data
+		vtkSmartPointer<vtkPoints> mPoints;
+		vtkSmartPointer<vtkStructuredGrid> mGrid;
+
+		//Member variables used for rendering and interaction
+		vtkSmartPointer<vtkDataSetMapper> mMapper;
+		vtkSmartPointer<vtkActor> mActor;
+		vtkSmartPointer<vtkRenderer> mRenderer;
+		vtkSmartPointer<vtkRenderWindow> mRenderWindow;
+		vtkSmartPointer<vtkRenderWindowInteractor> mRenderWindowInteractor;
 
 	public:
+
+		//Constructor which takes the dimensions as inputs
+		Visualizer(double x_dim, double y_dim, double z_dim, double resolution);
 		Visualizer();
 		~Visualizer();
-		void add_points();
-		int start_rendering(bool mesh = false);
+
+		//Method which should be used to incrementally add points to the existing data
+		void add_points(vector < array < double, 3> > &points);
+		void clear_points();
+
+		//Demo functions
+		void render_demo_sphere( double radius);
+		void render_demo_sphere_mesh( double radius);
+		void render_demo_cube( double radius);
+		void render_demo_cube_mesh( double radius);
+
+		//Functions to render the data 
+		vtkSmartPointer<vtkRenderer> get_renderer();
+		void start_rendering(int width = 1920, int height = 1080);
 		void render_occupancy();
+		void generate_sphere(vtkSmartPointer<vtkImageData> grid);
 
 };
 

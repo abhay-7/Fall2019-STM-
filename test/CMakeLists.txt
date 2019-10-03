@@ -7,7 +7,7 @@ find_package(VTK REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/include/Visualization /usr/local/include/vtk-8.90)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -g")
 
 add_executable(test_visualizer test_visualizer.cpp)
 

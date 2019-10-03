@@ -1,22 +1,21 @@
 #include "visualizer.hpp"
 
-Visualizer::Visualizer()
+Visualizer::Visualizer(double x_dim, double y_dim, double z_dim, double resolution)
 {
-    cout << "Entering Visualizer()" << endl;
-    points->Allocate(100);
+    mDims[0] = floor(x_dim / resolution);
+    mDims[1] = floor(y_dim / resolution);
+    mDims[2] = floor(z_dim / resolution);
 
-    imageData = vtkSmartPointer<vtkImageData>::New();
-    imageData->SetDimensions( 10, 10, 10);
-    imageData->SetSpacing(0.2, 0.2, 0.2);
-    imageData->SetOrigin(0.0, 0.0, 0.0);
-    imageData->AllocateScalars(VTK_DOUBLE,1);
+    mPoints = vtkSmartPointer<vtkPoints>::New();
     
-    actor = vtkSmartPointer<vtkActor>::New();
-    mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-    renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-    renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    cout << "Exiting Visualizer()" << endl;
+    mGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+    mGrid->SetDimensions( mDims[0], mDims[1], mDims[2] );
+
+    mActor = vtkSmartPointer<vtkActor>::New();
+    mMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    mRenderer = vtkSmartPointer<vtkRenderer>::New();
+    mRenderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+    mRenderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
 }
 
 Visualizer::~Visualizer()
@@ -25,163 +24,221 @@ Visualizer::~Visualizer()
 }
 
 
-int Visualizer::start_rendering(bool mesh)
+vtkSmartPointer<vtkRenderer> Visualizer::get_renderer()
 {
-    // Specify the size of the image data
-    
-    mapper->SetInputData(imageData);
-    actor->SetMapper(mapper);
-    
-    // Add both renderers to the window
-    renderWindow->AddRenderer(renderer);
-      
-    // Add a sphere to the left and a cube to the right
-    renderer->AddActor(actor);
-    renderer->ResetCamera();
-    
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-    renderWindow->Render();
-    renderWindowInteractor->Start();
-
-    return 0;
+    return mRenderer;
 }
 
-void Visualizer::add_points()
+void Visualizer::start_rendering(int width, int height)
 {
-    cout << "Entering add_points" << endl;
-    int* dims = imageData->GetDimensions();
-    std::cout << "Dims: " << " x: " << dims[0] << " y: " << dims[1] << " z: " << dims[2] << std::endl;
+    mRenderWindow->AddRenderer(mRenderer);
+    mRenderWindowInteractor->SetRenderWindow(mRenderWindow);
+    mRenderer->AddActor(mActor);
+    // mRenderer->SetBackground(.8, .8, .8);
+    mRenderer->SetBackground(1, 1, 1);
+    mRenderWindow->SetSize(width, height);
+    mRenderWindow->Render();
+    mRenderWindowInteractor->Start();
+}
 
-    std::cout << "Number of points: " << imageData->GetNumberOfPoints() << std::endl;
-    std::cout << "Number of cells: " << imageData->GetNumberOfCells() << std::endl;
+void Visualizer::clear_points()
+{
+    mPoints->Reset();
+}
 
-    for(int x = 0; x < dims[0]; ++x)
+void Visualizer::add_points(vector < array < double, 3> > &points)
+{
+    int i = 0;
+    for(auto point : points)
     {
-        for(int y = 0; y < dims[1]; ++y)
-        {
-            for(int z = 0; z < dims[2]; ++z)
-            {
-                double* pixel = static_cast<double*>(imageData->GetScalarPointer(x,y,z));
-                if( (z % 5) && (y % 5) && (x % 5) )
-                    pixel[0] = 100.0;
-                else
-                    pixel[0] = 0.0;
-            }
-        }
+        mPoints->InsertNextPoint(point.data());
     }
 }
 
-void Visualizer::render_occupancy()
+void Visualizer::render_demo_sphere( double radius)
 {
+    vector< array < double, 3 > > points;
 
-    vtkSmartPointer<vtkImageDataGeometryFilter> imageDataGeometryFilter = 
-    vtkSmartPointer<vtkImageDataGeometryFilter>::New();
-    imageDataGeometryFilter->SetInputData(imageData);
-    imageDataGeometryFilter->Update();
-#if 0
+    for(double i = 0; i < mDims[0]; i += 0.1 )
+    {
+        for(double j = 0; j < mDims[1]; j += 0.1 )
+        {
+            for(double k = 0; k < mDims[2]; k += 0.1 )
+            {
+                if( (pow(i  - 5.0, 2) + pow(j - 5.0, 2) + pow( k - 5.0, 2)) < (radius * radius))
+                {
+                    points.push_back(array<double, 3> {i+5.0, j+5.0, k + 5.0});
+                }
+            }
+        }
+    }
 
+    add_points(points);
 
-    vtkSmartPointer<vtkPointOccupancyFilter> occupancy = 
-    vtkSmartPointer<vtkPointOccupancyFilter>::New();
-    occupancy->SetInputData(imageDataGeometryFilter->GetOutput());
-    occupancy->SetSampleDimensions(10, 10, 10);
-    occupancy->SetOccupiedValue(255);
-    occupancy->Update();
+    mGrid->SetPoints(mPoints);
 
-    double isoValue = 0.5;
-    vtkSmartPointer<vtkMarchingCubes> surface =
-    vtkSmartPointer<vtkMarchingCubes>::New();
-  surface->SetInputData(imageData);
-  surface->ComputeNormalsOn();
-  surface->SetValue(0, isoValue);
-
-  vtkSmartPointer<vtkRenderer> renderer =
-    vtkSmartPointer<vtkRenderer>::New();
-  renderer->SetBackground(.1, .2, .3);
-
-  vtkSmartPointer<vtkRenderWindow> renderWindow =
-    vtkSmartPointer<vtkRenderWindow>::New();
-  renderWindow->AddRenderer(renderer);
-  vtkSmartPointer<vtkRenderWindowInteractor> interactor =
-    vtkSmartPointer<vtkRenderWindowInteractor>::New();
-  interactor->SetRenderWindow(renderWindow);
-
-  vtkSmartPointer<vtkPolyDataMapper> mapper =
-    vtkSmartPointer<vtkPolyDataMapper>::New();
-  mapper->SetInputConnection(surface->GetOutputPort());
-    // mapper->SetInputData(imageDataGeometryFilter->GetOutput());
-  mapper->ScalarVisibilityOff();
-
-  vtkSmartPointer<vtkActor> actor =
-    vtkSmartPointer<vtkActor>::New();
-  actor->SetMapper(mapper);
-
-  renderer->AddActor(actor);
-
-  renderWindow->Render();
-  interactor->Start();
-
-#else
-    vtkSmartPointer<vtkPointOccupancyFilter> occupancy = 
-    vtkSmartPointer<vtkPointOccupancyFilter>::New();
-    occupancy->SetInputData(imageDataGeometryFilter->GetOutput());
-    occupancy->SetSampleDimensions(100, 100, 100);
+    vtkSmartPointer<vtkPointOccupancyFilter> occupancy = vtkSmartPointer<vtkPointOccupancyFilter>::New();
+    occupancy->SetInputData(mGrid);
+    occupancy->SetSampleDimensions( mDims[0], mDims[1], mDims[2]);
     occupancy->SetOccupiedValue(255);
     occupancy->Update();
 
     vtkSmartPointer<vtkThreshold> threshold =
     vtkSmartPointer<vtkThreshold>::New();
-  threshold->SetInputConnection(occupancy->GetOutputPort());
-  threshold->ThresholdByUpper(255);
-  threshold->AllScalarsOff();
+    threshold->SetInputConnection(occupancy->GetOutputPort());
+    threshold->ThresholdByUpper(100);
+    threshold->AllScalarsOff();
 
-  vtkSmartPointer<vtkDataSetMapper> mapper =
-    vtkSmartPointer<vtkDataSetMapper>::New();
-  mapper->SetInputConnection(threshold->GetOutputPort());
-  mapper->ScalarVisibilityOff();
 
-  vtkSmartPointer<vtkActor> actor =
-    vtkSmartPointer<vtkActor>::New();
-  actor->SetMapper(mapper);
+    mMapper->SetInputConnection(threshold->GetOutputPort());
+    mMapper->ScalarVisibilityOff();
 
-  // Colors
-  vtkSmartPointer<vtkNamedColors> nc =
-    vtkSmartPointer<vtkNamedColors>::New();
-  double flesh[3];
-  nc->GetColorRGB("moccasin", flesh);
-  actor->GetProperty()->SetColor(flesh);
+    double flesh[3] = {198/255.0, 134/255.0, 66/255.0};
+    mActor->GetProperty()->SetColor(flesh);
+    mActor->SetMapper(mMapper);
+    start_rendering();
+    
+}
 
-  // Create graphics stuff
-  //
-  vtkSmartPointer<vtkRenderer> ren1 =
-    vtkSmartPointer<vtkRenderer>::New();
-  ren1->SetBackground(.8, .8, 1.0);
+void Visualizer::render_demo_sphere_mesh( double radius)
+{
+    vector< array < double, 3 > > points;
 
-  vtkSmartPointer<vtkRenderWindow> renWin =
-    vtkSmartPointer<vtkRenderWindow>::New();
-  renWin->AddRenderer(ren1);
-  renWin->SetSize(512,512);
+    for(double i = 0; i < mDims[0]; i += 0.1 )
+    {
+        for(double j = 0; j < mDims[1]; j += 0.1 )
+        {
+            for(double k = 0; k < mDims[2]; k += 0.1 )
+            {
+                if( (pow(i  - 5.0, 2) + pow(j - 5.0, 2) + pow( k - 5.0, 2)) < (radius * radius))
+                {
+                    points.push_back(array<double, 3> {i+5.0, j+5.0, k + 5.0});
+                }
+            }
+        }
+    }
 
-  vtkSmartPointer<vtkRenderWindowInteractor> iren =
-    vtkSmartPointer<vtkRenderWindowInteractor>::New();
-  iren->SetRenderWindow(renWin);
+    add_points(points);
+    mGrid->SetPoints(mPoints);
 
-  // Add the actors to the renderer, set the background and size
-  //
-  ren1->AddActor(actor);
+    vtkSmartPointer<vtkPointOccupancyFilter> occupancy = vtkSmartPointer<vtkPointOccupancyFilter>::New();
+    occupancy->SetInputData(mGrid);
+    occupancy->SetSampleDimensions( mDims[0], mDims[1], mDims[2]);
+    occupancy->SetOccupiedValue(255);
+    occupancy->Update();
 
-  // Generate an interesting view
-  //
-  ren1->ResetCamera();
-  ren1->GetActiveCamera()->Azimuth(120);
-  ren1->GetActiveCamera()->Elevation(30);
-  ren1->GetActiveCamera()->Dolly(1.25);
-  ren1->ResetCameraClippingRange();
+    vtkSmartPointer<vtkMarchingCubes> surface =
+    vtkSmartPointer<vtkMarchingCubes>::New();
+    surface->SetInputConnection(occupancy->GetOutputPort());
+    surface->ComputeNormalsOn();
+    surface->SetValue(0, 0.5);
 
-  renWin->Render();
-  iren->Initialize();
-  iren->Start();
-#endif
+    mMapper->SetInputConnection(surface->GetOutputPort());
+
+    double flesh[3] = {198/255.0, 134/255.0, 66/255.0};
+    mActor->GetProperty()->SetColor(flesh);
+    mActor->SetMapper(mMapper);
+    mMapper->ScalarVisibilityOff();
+
+    start_rendering();
+    
+}
+
+void Visualizer::render_demo_cube( double radius)
+{
+    vector< array < double, 3 > > points;
+
+    for(double i = 4; i < 6; i += 0.1 )
+    {
+        for(double j = 4; j < 6; j += 0.1 )
+        {
+            for(double k = 4; k < 6; k += 0.1 )
+            {
+                // if( (i > (0.25 * mDims[0]) && i < (0.75 * mDims[0]) )&&
+                //     (j > (0.25 * mDims[1]) && j < (0.75 * mDims[1]) )&&
+                //     (k > (0.25 * mDims[2]) && k < (0.75 * mDims[2]) ) )
+                {
+                    points.push_back(array<double, 3> {i, j, k});
+                }
+            }
+        }
+    }
+
+    add_points(points);
+
+    mGrid->SetPoints(mPoints);
+
+    vtkSmartPointer<vtkPointOccupancyFilter> occupancy = vtkSmartPointer<vtkPointOccupancyFilter>::New();
+    occupancy->SetInputData(mGrid);
+    occupancy->SetSampleDimensions( mDims[0], mDims[1], mDims[2]);
+    occupancy->SetOccupiedValue(255);
+    occupancy->Update();
+
+    vtkSmartPointer<vtkThreshold> threshold =
+    vtkSmartPointer<vtkThreshold>::New();
+    threshold->SetInputConnection(occupancy->GetOutputPort());
+    threshold->ThresholdByUpper(100);
+    threshold->AllScalarsOff();
+
+
+    mMapper->SetInputConnection(threshold->GetOutputPort());
+    mMapper->ScalarVisibilityOff();
+
+    double flesh[3] = {198/255.0, 134/255.0, 66/255.0};
+    mActor->GetProperty()->SetColor(flesh);
+    mActor->SetMapper(mMapper);
+    start_rendering();
+    
+}
+
+void Visualizer::render_demo_cube_mesh( double radius)
+{
+    vector< array < double, 3 > > points;
+
+    for(double i = 4; i < 6; i += 0.1 )
+    {
+        for(double j = 4; j < 6; j += 0.1 )
+        {
+            for(double k = 4; k < 6; k += 0.1 )
+            {
+                // if( (i > (0.25 * mDims[0]) && i < (0.75 * mDims[0]) )&&
+                //     (j > (0.25 * mDims[1]) && j < (0.75 * mDims[1]) )&&
+                //     (k > (0.25 * mDims[2]) && k < (0.75 * mDims[2]) ) )
+                {
+                    points.push_back(array<double, 3> {i, j, k});
+                }
+            }
+        }
+    }
+
+    add_points(points);
+    mGrid->SetPoints(mPoints);
+
+    vtkSmartPointer<vtkPointOccupancyFilter> occupancy = vtkSmartPointer<vtkPointOccupancyFilter>::New();
+    occupancy->SetInputData(mGrid);
+    occupancy->SetSampleDimensions( mDims[0], mDims[1], mDims[2]);
+    occupancy->SetOccupiedValue(255);
+    occupancy->Update();
+
+    vtkSmartPointer<vtkMarchingCubes> surface =
+    vtkSmartPointer<vtkMarchingCubes>::New();
+    surface->SetInputConnection(occupancy->GetOutputPort());
+    surface->ComputeNormalsOn();
+    surface->SetValue(0, 0.5);
+
+    mMapper->SetInputConnection(surface->GetOutputPort());
+
+    double flesh[3] = {198/255.0, 134/255.0, 66/255.0};
+    mActor->GetProperty()->SetColor(flesh);
+    mActor->SetMapper(mMapper);
+    mMapper->ScalarVisibilityOff();
+
+    start_rendering();
+    
+}
+
+void Visualizer::render_occupancy()
+{
 
 }
 

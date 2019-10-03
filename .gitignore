@@ -5,7 +5,8 @@
 # dont track these file types:
 *.exe
 *.o
-
+build/
+./build/*
 
 
 # ignore these pacakges too
