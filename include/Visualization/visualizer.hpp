@@ -8,6 +8,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkDataSetMapper.h>
 #include <vtkPoints.h>
+#include <vtkLine.h>
+#include <vtkCellArray.h>
 #include <vtkStructuredGrid.h>
 #include <vtkSphereSource.h>
 #include <vtkThreshold.h>
@@ -27,8 +29,9 @@ class Visualizer
 	private:
 
 		//Members containing grid properties
-		double mDims[3];
 		double mResolution;
+		double mDims[3];
+		double mGridDims[3];
 
 		//Data structures storing the pointd or the scan data
 		vtkSmartPointer<vtkPoints> mPoints;
@@ -37,6 +40,7 @@ class Visualizer
 		//Member variables used for rendering and interaction
 		vtkSmartPointer<vtkDataSetMapper> mMapper;
 		vtkSmartPointer<vtkActor> mActor;
+		vtkSmartPointer<vtkActor> mGridActor;
 		vtkSmartPointer<vtkRenderer> mRenderer;
 		vtkSmartPointer<vtkRenderWindow> mRenderWindow;
 		vtkSmartPointer<vtkRenderWindowInteractor> mRenderWindowInteractor;
@@ -52,6 +56,9 @@ class Visualizer
 		void add_points(vector < array < double, 3> > &points);
 		void clear_points();
 
+		void generate_grid(double interval);
+
+
 		//Demo functions
 		void render_demo_sphere( double radius);
 		void render_demo_sphere_mesh( double radius);
@@ -60,7 +67,7 @@ class Visualizer
 
 		//Functions to render the data 
 		vtkSmartPointer<vtkRenderer> get_renderer();
-		void start_rendering(int width = 1920, int height = 1080);
+		void start_rendering(int width = 1920, int height = 1080, bool grid = true);
 		void render_occupancy();
 		void generate_sphere(vtkSmartPointer<vtkImageData> grid);
 
