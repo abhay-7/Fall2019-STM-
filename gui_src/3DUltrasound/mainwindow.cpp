@@ -3,8 +3,7 @@
 #include <iostream>
 #include <cstdio>
 
-#include <QPointer>
-#include <QVTKOpenGLWidget.h>
+
 
 #define SCREEN_WIDTH 700
 #define SCREEN_HEIGHT 700
@@ -58,7 +57,8 @@ void SonogramData::set_data_to_render(std::vector<sonogram_structure> data)
 //Gets a single angle at a specified index
 double SonogramData::get_angle(unsigned int pos)
 {
-    return this->data_to_render[pos].encoder_angle;
+    //return this->data_to_render[pos].encoder_angle;
+    return 0.0;
 }
 
 
@@ -81,7 +81,7 @@ std::vector<int> SonogramData::get_single_intensities(unsigned int pos)
     std::vector<int> intensities;
     for (unsigned int i =0; i <  513; i++)
     {
-        intensities.push_back(this->data_to_render[pos].sonogram_intensities[i]);
+        //intensities.push_back(this->data_to_render[pos].sonogram_intensities[i]);
     }
 
     return intensities;
@@ -126,7 +126,7 @@ std::vector<bool> SonogramData::get_check_sums()
 }
 
 
-std::vector<sonogram_structure>  MainWindow::ProcessFile(FILE* fileIn)
+std::vector<sonogram_raw>  MainWindow::ProcessFile(FILE* fileIn)
 {
     char marker[] = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
     bool markerFound = false;
@@ -164,9 +164,20 @@ std::vector<sonogram_structure>  MainWindow::ProcessFile(FILE* fileIn)
         }
     }
 
-    //Now we will in the data structure
+
+    sonogram_raw data;
+
+    //Now we will fill in the data structure
+    std::vector<sonogram_raw> raw_data;
 
 
+    while (fread(data.sonogram_data, ARRAY_LEN, 1, fileIn) == 1)
+    {
+       raw_data.push_back(data); //put in one sonogram structure at a time
+    }
+
+
+    return raw_data;
 
 }
 
@@ -186,7 +197,9 @@ void MainWindow::on_open_file_triggered()
 
 
     //Put the FILE* into an easily parsable data structure
-    //this->sonogram_data_to_render = ProcessFile(fileIn);
+    this->sonogram_data_to_render = ProcessFile(fileIn);
+
+
 
 }
 
@@ -204,16 +217,57 @@ void MainWindow::on_actionContact_triggered()
     QDesktopServices::openUrl(QUrl("mailto:yf2233@columbia.edu?subject=Help Regarding Ultrasound Software&body=Please inlude a brief summary of issue. If this issue is a bug, please inlcude a way to reproduce the error if possible.", QUrl::TolerantMode));
 }
 
+
+
+std::vector<sonogram_structure> SonogramData::convertRawToStructure(std::vector<sonogram_raw> raw_data){
+    std::vector<sonogram_structure> processed_data;
+
+    char angle[2];
+    char checksum[2];
+    char intensities[500];
+
+
+    for (unsigned int i = 0; i < raw_data.size(); i++)
+    {
+      for (unsigned int j = 0; j < 512; j++)
+      {
+
+          //WARNING:: THIS IS ALL SUBJECT TO CHANGE
+
+          if (j < 10){
+              continue;
+          }
+          if(j == 11 || j == 12){
+              angle[j - 11] = raw_data[i].sonogram_data[j];
+          }
+
+          else{
+              intensities[j - 12] = raw_data[i].sonogram_data[j];
+          }
+
+          //Check sum at the end? Not sure yet...
+      }
+    }
+
+
+
+
+    return processed_data;
+}
+
+
+std::vector<sonogram_raw> SonogramData::getRawData(){
+
+    return this->raw_data;
+}
+
+
+
+
 void MainWindow::on_pushButton_clicked()
 {
     if(this->sonogram_data_to_render.size() < 2)
     {
-
-        QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
-
-        QPointer<QVTKOpenGLWidget> widget = new QVTKOpenGLWidget();
-
-
 
 
         QMessageBox msgBox;
@@ -224,9 +278,11 @@ void MainWindow::on_pushButton_clicked()
     else
     {
         SonogramData data;
-        data.set_data_to_render(this->sonogram_data_to_render);
 
-        //Inlcuder render code here
+        std::vector<sonogram_structure> data_to_render = data.convertRawToStructure(data.getRawData());
+
+
+        //Inlcude render code here
         /*
          *
          *
@@ -239,7 +295,6 @@ void MainWindow::on_pushButton_clicked()
          *
          *
          */
-
     }
 
 }

@@ -37,9 +37,9 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    std::vector<sonogram_structure>  ProcessFile(FILE* fileIN);
+    std::vector<sonogram_raw>  ProcessFile(FILE* fileIN);
     int FindFirstMarker(char* c, long x, char [], FILE *fileIn);
-    std::vector<sonogram_structure> sonogram_data_to_render;
+    std::vector<sonogram_raw> sonogram_data_to_render;
 
     friend class SonogramData; //allows  SonogramData class to access this private variable
 
@@ -78,11 +78,14 @@ public:
     //Mechanics :
 
     void set_data_to_render(std::vector<sonogram_structure>);
+    std::vector<sonogram_structure> convertRawToStructure(std::vector<sonogram_raw> raw_data);
+    std::vector<sonogram_raw> getRawData();
     SonogramData();
     ~SonogramData();
 
 private:
-    std::vector<sonogram_structure> data_to_render;
+    std::vector<sonogram_raw> raw_data;
+     std::vector<sonogram_structure> data_to_render;
     int length; //length of sonogram data
     double firstTimeStamp;
     double firstAngle;
