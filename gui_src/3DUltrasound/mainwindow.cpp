@@ -222,23 +222,26 @@ void MainWindow::on_actionContact_triggered()
 std::vector<sonogram_structure> SonogramData::convertRawToStructure(std::vector<sonogram_raw> raw_data){
     std::vector<sonogram_structure> processed_data;
 
-    char angle[2];
+    char angle[3];
     char checksum[2];
-    char intensities[500];
+    char intensities[501];
 
+    sonogram_structure temp;
 
     for (unsigned int i = 0; i < raw_data.size(); i++)
     {
       for (unsigned int j = 0; j < 512; j++)
       {
 
-          //WARNING:: THIS IS ALL SUBJECT TO CHANGE
+          //WARNING THIS IS ALL SUBJECT TO CHANGE
+          //I need to see exact data rep
 
           if (j < 10){
               continue;
           }
           if(j == 11 || j == 12){
               angle[j - 11] = raw_data[i].sonogram_data[j];
+
           }
 
           else{
@@ -247,6 +250,10 @@ std::vector<sonogram_structure> SonogramData::convertRawToStructure(std::vector<
 
           //Check sum at the end? Not sure yet...
       }
+      angle[2] = 0;
+      intensities[500] = 0;
+
+
     }
 
 
