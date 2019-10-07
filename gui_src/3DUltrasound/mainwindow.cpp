@@ -54,6 +54,11 @@ void SonogramData::set_data_to_render(std::vector<sonogram_structure> data)
     this->data_to_render = data;
 }
 
+void SonogramData::set_raw_data(std::vector<sonogram_raw> raw)
+{
+    this->raw_data = raw;
+}
+
 //Gets a single angle at a specified index
 double SonogramData::get_angle(unsigned int pos)
 {
@@ -219,14 +224,15 @@ void MainWindow::on_actionContact_triggered()
 
 
 
-std::vector<sonogram_structure> SonogramData::convertRawToStructure(std::vector<sonogram_raw> raw_data){
-    std::vector<sonogram_structure> processed_data;
+void SonogramData::convertRawToStructure(std::vector<sonogram_raw> raw_data)
+{
+    std::vector<sonogram_structure> structured_data;
 
     char angle[3];
     char checksum[2];
-    char intensities[501];
 
     sonogram_structure temp;
+    std::vector<int> intensities;
 
     for (unsigned int i = 0; i < raw_data.size(); i++)
     {
@@ -234,32 +240,41 @@ std::vector<sonogram_structure> SonogramData::convertRawToStructure(std::vector<
       {
 
           //WARNING THIS IS ALL SUBJECT TO CHANGE
-          //I need to see exact data rep
+          //I need to see exact data rep (some of this is guess work D: )
 
-          if (j < 10){
+          if (j < 10)
+          { //skip the marker
               continue;
           }
-          if(j == 11 || j == 12){
-              angle[j - 11] = raw_data[i].sonogram_data[j];
 
+          if(j == 11 || j == 12)
+          {
+              angle[j - 11] = raw_data[i].sonogram_data[j];
           }
 
-          else{
-              intensities[j - 12] = raw_data[i].sonogram_data[j];
+          else
+          {
+              intensities.push_back(raw_data[i].sonogram_data[j]);
           }
 
           //Check sum at the end? Not sure yet...
       }
-      angle[2] = 0;
-      intensities[500] = 0;
 
 
+      //Null terminate
+      angle[2] = '\0';
+      intensities[500] = '\0';
+
+      short* short_ptr = (short *)angle;
+      short angle = *short_ptr;
+
+      temp.angle = angle;
+      temp.intensities = intensities;
+      temp.checksum = 0; //TODO
+      structured_data.push_back(temp);
     }
 
-
-
-
-    return processed_data;
+    this->data_to_render = structured_data;
 }
 
 
@@ -284,10 +299,13 @@ void MainWindow::on_pushButton_clicked()
 
     else
     {
-        SonogramData data;
 
-        std::vector<sonogram_structure> data_to_render = data.convertRawToStructure(data.getRawData());
+        SonogramData *render = new SonogramData();
+        render->set_raw_data(this->sonogram_data_to_render);
 
+        render->convertRawToStructure(render->getRawData());
+
+        //Now we have the data in clean format.
 
         //Inlcude render code here
         /*

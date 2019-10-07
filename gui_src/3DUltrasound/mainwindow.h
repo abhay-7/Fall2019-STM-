@@ -78,14 +78,15 @@ public:
     //Mechanics :
 
     void set_data_to_render(std::vector<sonogram_structure>);
-    std::vector<sonogram_structure> convertRawToStructure(std::vector<sonogram_raw> raw_data);
+    void set_raw_data(std::vector<sonogram_raw>);
+    void convertRawToStructure(std::vector<sonogram_raw> raw_data);
     std::vector<sonogram_raw> getRawData();
     SonogramData();
     ~SonogramData();
 
 private:
     std::vector<sonogram_raw> raw_data;
-     std::vector<sonogram_structure> data_to_render;
+    std::vector<sonogram_structure> data_to_render;
     int length; //length of sonogram data
     double firstTimeStamp;
     double firstAngle;
