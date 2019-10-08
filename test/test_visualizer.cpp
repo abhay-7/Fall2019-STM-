@@ -1,9 +1,19 @@
-#include <visualizer.hpp>
+#include "visualizer.hpp"
 
+int main() {
+    
+	Visualizer vis; 
 
-int main(int, char *[])
-{
+	vis.setPoints(); 
 
-  Visualizer viz;
-  viz.start_rendering();
+	vis.programmableFilterFunc(); 
+
+	vis.setMapper(); 
+
+	vis.axes(); 
+
+	vis.renderProbe(); 
+
+	vis.render(); 
+
 }

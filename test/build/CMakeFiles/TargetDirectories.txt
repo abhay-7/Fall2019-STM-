@@ -1,0 +1,3 @@
+/Users/roxy/Desktop/Ultrasound Code/Fall2019-STM-/test/build/CMakeFiles/rebuild_cache.dir
+/Users/roxy/Desktop/Ultrasound Code/Fall2019-STM-/test/build/CMakeFiles/edit_cache.dir
+/Users/roxy/Desktop/Ultrasound Code/Fall2019-STM-/test/build/CMakeFiles/test_visualizer.dir
