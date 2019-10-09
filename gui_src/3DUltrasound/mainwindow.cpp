@@ -309,18 +309,31 @@ void MainWindow::on_pushButton_clicked()
 
         //Inlcude render code here
         // Assuming render is the array of sonogram structure that I get
-        pair <int,vector<int>> b; // pair storing at first index the angle, and at second index the array of intensities at 0.1 cm difference
+        pair <int,vector<double>> b; // pair storing at first index the angle, and at second index the array of intensities at 0.1 cm difference
         int ang=0;
-        int n=0;
+        int n=0,count=0,tmp_sum=0;
         for (int i=0;i<render.size();i++){
             ang = render[i]->angle;
             b.first=ang;
             n=(render[i]->intensities).size();
+            count=0;
+            tmp_sum=0;
             for (int j=0;j<n;j++){
-            if(j%2) {
-            b.second.push_back(render[i]->intensities[j]+render[i]->intensities[j-1]);
+            if(count<17)
+                {tmp_sum+=render[i]->intensities[j];
+                 count++;}
+            else {
+                 b.second.push_back(double(tmp_sum/(count*10.0)));
+                 //cout<<tmp_sum<<" "<<tmp_sum/(count*10.0)<<endl;
+                 count=0;
+                 tmp_sum=0;
             }
             }
+            if(count)
+                {
+                  b.second.push_back(double(tmp_sum/(count*10.0)));
+                  //cout<<tmp_sum<<" "<<count<<" "<<tmp_sum/(count*10.0)<<endl;
+                }
         }
     }
 
